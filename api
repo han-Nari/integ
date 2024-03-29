@@ -1,0 +1,85 @@
+<?php 
+
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type");
+
+    include ('includes/finance_db_connect.php');
+
+// Handle API request
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    try {
+        // Prepare SQL statement
+        $query = "SELECT * FROM expenses";
+        $statement = $pdo->prepare($query);
+        
+        // Execute the query
+        $statement->execute();
+        
+        // Check if data was retrieved
+        if ($statement->rowCount() > 0) {
+            // Initialize an empty array to hold features
+            $features = array('type' => 'FeatureCollection', 'features' => array());
+            
+            // Fetch data from result set and encode as GeoJSON features
+            while ($row = $statement->fetch()) {
+                $data[] = $row;
+            }
+            
+            // Prepare response
+            $response = array('status' => 'success', 'data' => $data);
+            echo json_encode($response);
+        } else {
+            // No data found
+            $response = array('status' => 'error', 'message' => 'No data found');
+            echo json_encode($response);
+        }
+    } catch (PDOException $e) {
+        // Handle database errors
+        $response = array('status' => 'error', 'message' => $e->getMessage());
+        echo json_encode($response);
+    }
+} else {
+    // Handle unsupported HTTP methods
+    header('HTTP/1.1 405 Method Not Allowed');
+    echo 'Unsupported request method.';
+}
+
+// 
+fetch('http://192.168.1.42/adminlte/api/landcomp.php')
+	    .then(response =>  {
+
+	        if(!response.ok) {
+	            throw new Error('Network response was not ok!');
+	        }
+
+	        return response.json();
+	    })
+	    .then(data => {
+	        
+	        console.log(data);
+	        createTable(data.data);
+	    })
+	    .catch(error => {
+	        console.error('Fetch error:', error);
+	    })
+
+	    function createTable(data) {
+	    	var tableBody = document.getElementById("table-body");
+
+	    	data.forEach(item => {
+	    		var row = tableBody.insertRow();
+	    		var nameCell = row.insertCell(0);
+	    		var titleCell = row.insertCell(1);
+	    		var areaCell = row.insertCell(2);
+	    		var priceCell = row.insertCell(3);
+	    		var addressCell = row.insertCell(4);
+
+	    		nameCell.innerHTML = item.name;
+	    		areaCell.innerHTML = item.area;
+	    		titleCell.innerHTML = item.title;
+	    		priceCell.innerHTML = item.price;
+	    		addressCell.innerHTML = item.address;	
+	    	});
+	    }
+//
